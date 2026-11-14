@@ -1,4 +1,5 @@
-// index.js - Alles in einem Bot
+const http = require('http');
+http.createServer((req, res) => { res.writeHead(200); res.end('Bot läuft!'); }).listen(process.env.PORT || 3000);// index.js - Alles in einem Bot
 const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType, SlashCommandBuilder, REST, Routes } = require('discord.js');
 require('dotenv').config();
 
