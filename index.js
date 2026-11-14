@@ -1,6 +1,6 @@
 const http = require('http');
 http.createServer((req, res) => { res.writeHead(200); res.end('Bot läuft!'); }).listen(process.env.PORT || 3000);
-const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType, SlashCommandBuilder, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType, SlashCommandBuilder, REST, Routes, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 require('dotenv').config();
 
 const client = new Client({
@@ -18,7 +18,7 @@ const TICKET_STAFF_ROLE = 'Team';
 
 const findChannel = (guild, name) => guild.channels.cache.find(c => c.name.toLowerCase().includes(name));
 async function log(guild, title, desc, color = 0x2b2d31) {
-  const ch = guild.channels.cache.find(c => c.name === 'server-logs');
+  const ch = guild.channels.cache.find(c => c.name.includes('server-logs'));
   if (!ch) return;
   const embed = new EmbedBuilder().setTitle(title).setDescription(desc).setColor(color).setTimestamp();
   ch.send({ embeds: [embed] }).catch(()=>{});
@@ -35,140 +35,111 @@ const CREATOR_FRAGEN = ["Wie alt bist du?","Auf welcher Plattform machst du Cont
 const getRole = (guild, name) => guild.roles.cache.find(r => r.name === name);
 const SYNC_ROLLEN = ['Neu', 'Mitglied', 'Kunde', 'Bewerber', 'Team', 'VIP', 'Partner', 'Stammkunde', 'Content Creator', 'Tester', 'Booster', 'Ehrenmitglied'];
 
-// ================= FINALE SORTIERUNG + DOPPELT FIX =================
+// ================= NEUER SERVER - ALLES NEU MIT EMOJI =================
 const FINALE_STRUKTUR = [
   { kat: '🚀 START', pos: 0, channels: [
-    { name: 'willkommen', type: 0, pos: 0 },
-    { name: 'verify', type: 0, pos: 1 },
-    { name: 'regeln', type: 0, pos: 2 },
-    { name: 'ankündigungen', type: 0, pos: 3 },
-    { name: 'über-botbastler', type: 0, pos: 4 },
+    { emoji: '👋', name: 'willkommen', topic: '👋 Willkommen bei BotBastler!' },
+    { emoji: '✅', name: 'verify', topic: '✅ Hier verifizieren!' },
+    { emoji: '📜', name: 'regeln', topic: '📜 Regeln lesen!' },
+    { emoji: '📢', name: 'ankündigungen', topic: '📢 Neuigkeiten!' },
+    { emoji: '🤖', name: 'über-botbastler', topic: '🤖 Wer sind wir?' },
   ]},
   { kat: '💰 LEISTUNGEN', pos: 1, channels: [
-    { name: 'preise', type: 0, pos: 0 },
-    { name: 'portfolio', type: 0, pos: 1 },
-    { name: 'unsere-leistungen', type: 0, pos: 2 },
-    { name: 'so-läuft-es-ab', type: 0, pos: 3 },
-    { name: 'bewertungen', type: 0, pos: 4 },
-    { name: 'gewinnspiele', type: 0, pos: 5 },
+    { emoji: '💸', name: 'preise', topic: '💸 Unsere Preise' },
+    { emoji: '🖼️', name: 'portfolio', topic: '🖼️ Unsere Arbeiten' },
+    { emoji: '🛠️', name: 'unsere-leistungen', topic: '🛠️ Was wir machen' },
+    { emoji: '📋', name: 'so-läuft-es-ab', topic: '📋 Ablauf' },
+    { emoji: '⭐', name: 'bewertungen', topic: '⭐ Bewertungen' },
+    { emoji: '🎁', name: 'gewinnspiele', topic: '🎁 Giveaways' },
   ]},
   { kat: '💬 ANFRAGEN & COMMUNITY', pos: 2, channels: [
-    { name: 'support', type: 0, pos: 0 },
-    { name: 'community-chat', type: 0, pos: 1 },
-    { name: 'feedback', type: 0, pos: 2 },
-    { name: 'ticket-eröffnen', type: 0, pos: 3 },
-    { name: 'faq', type: 0, pos: 4 },
-    { name: 'ideen', type: 0, pos: 5 },
-    { name: 'umfragen', type: 0, pos: 6 },
-    { name: 'memes', type: 0, pos: 7 },
-    { name: 'media', type: 0, pos: 8 },
-    { name: 'events', type: 0, pos: 9 },
-    { name: 'partner-werbung', type: 0, pos: 10 },
-    { name: 'Community Lounge', type: 2, pos: 11 },
-    { name: 'Gaming Talk', type: 2, pos: 12 },
-    { name: 'Musik & Chill', type: 2, pos: 13 },
+    { emoji: '🆘', name: 'support', topic: '🆘 Hilfe hier!' },
+    { emoji: '💬', name: 'community-chat', topic: '💬 Quatschen' },
+    { emoji: '💡', name: 'feedback', topic: '💡 Feedback' },
+    { emoji: '🎫', name: 'ticket-eröffnen', topic: '🎫 Ticket mit Formular erstellen!' },
+    { emoji: '❓', name: 'faq', topic: '❓ Fragen & Antworten' },
+    { emoji: '💡', name: 'ideen', topic: '💡 Deine Ideen' },
+    { emoji: '📊', name: 'umfragen', topic: '📊 Umfragen' },
+    { emoji: '😂', name: 'memes', topic: '😂 Memes' },
+    { emoji: '📸', name: 'media', topic: '📸 Bilder & Videos' },
+    { emoji: '🎉', name: 'events', topic: '🎉 Events' },
+    { emoji: '🤝', name: 'partner-werbung', topic: '🤝 Partner' },
+    { emoji: '🎙️', name: 'Community Lounge', type: 2, topic: '🎙️ Voice - Chillen' },
+    { emoji: '🎮', name: 'Gaming Talk', type: 2, topic: '🎮 Voice - Zocken' },
+    { emoji: '🎵', name: 'Musik & Chill', type: 2, topic: '🎵 Voice - Musik' },
   ]},
   { kat: '💬 CHAT', pos: 3, channels: [
-    { name: 'allgemein', type: 0, pos: 0 },
-    { name: 'gaming', type: 0, pos: 1 },
-    { name: 'musik', type: 0, pos: 2 },
-    { name: 'bilder', type: 0, pos: 3 },
+    { emoji: '💬', name: 'allgemein', topic: '💬 Allgemein' },
+    { emoji: '🎮', name: 'gaming', topic: '🎮 Gaming' },
+    { emoji: '🎵', name: 'musik', topic: '🎵 Musik' },
+    { emoji: '🖼️', name: 'bilder', topic: '🖼️ Bilder' },
   ]},
   { kat: '🔑 KUNDENBEREICH', pos: 4, channels: [
-    { name: 'kunden-info', type: 0, pos: 0 },
-    { name: 'kunden-updates', type: 0, pos: 1 },
-    { name: 'kunden-chat', type: 0, pos: 2 },
-    { name: 'Kundengespräch', type: 2, pos: 3 },
+    { emoji: 'ℹ️', name: 'kunden-info', topic: 'ℹ️ Infos für Kunden' },
+    { emoji: '📢', name: 'kunden-updates', topic: '📢 Updates für Kunden' },
+    { emoji: '💬', name: 'kunden-chat', topic: '💬 Kunden Chat' },
+    { emoji: '📞', name: 'Kundengespräch', type: 2, topic: '📞 Voice - Kundengespräch' },
   ]},
   { kat: '🛠️ INTERN · TEAM', pos: 5, channels: [
-    { name: 'aufträge', type: 0, pos: 0 },
-    { name: 'planung', type: 0, pos: 1 },
-    { name: 'team-chat', type: 0, pos: 2 },
-    { name: 'interne-notizen', type: 0, pos: 3 },
-    { name: 'bewerbungen', type: 0, pos: 4 },
-    { name: 'team-abstimmungen', type: 0, pos: 5 },
-    { name: 'team-ideen', type: 0, pos: 6 },
-    { name: 'team-ankündigungen', type: 0, pos: 7 },
-    { name: 'team-feedback', type: 0, pos: 8 },
-    { name: 'team-termine', type: 0, pos: 9 },
-    { name: 'Team Talk', type: 2, pos: 10 },
-    { name: 'Team Meeting', type: 2, pos: 11 },
+    { emoji: '📦', name: 'aufträge', topic: '📦 Aufträge' },
+    { emoji: '📅', name: 'planung', topic: '📅 Planung' },
+    { emoji: '💬', name: 'team-chat', topic: '💬 Team Chat' },
+    { emoji: '📝', name: 'interne-notizen', topic: '📝 Notizen' },
+    { emoji: '📝', name: 'bewerbungen', topic: '📝 Bewerbungen' },
+    { emoji: '📊', name: 'team-abstimmungen', topic: '📊 Abstimmungen' },
+    { emoji: '💡', name: 'team-ideen', topic: '💡 Team Ideen' },
+    { emoji: '📢', name: 'team-ankündigungen', topic: '📢 Team News' },
+    { emoji: '💬', name: 'team-feedback', topic: '💬 Team Feedback' },
+    { emoji: '📅', name: 'team-termine', topic: '📅 Termine' },
+    { emoji: '🎙️', name: 'Team Talk', type: 2, topic: '🎙️ Voice - Team' },
+    { emoji: '📞', name: 'Team Meeting', type: 2, topic: '📞 Voice - Meeting' },
   ]},
   { kat: '👑 NUR OWNER', pos: 6, channels: [
-    { name: 'server-logs', type: 0, pos: 0 },
+    { emoji: '📜', name: 'server-logs', topic: '📜 Nur Owner!' },
   ]},
 ];
 
 async function syncAlles(guild) {
   for (const name of SYNC_ROLLEN) {
-    if (!guild.roles.cache.find(r => r.name === name)) await guild.roles.create({ name, reason: 'Auto-Sync' }).catch(()=>{});
+    if (!guild.roles.cache.find(r => r.name === name)) await guild.roles.create({ name }).catch(()=>{});
   }
   const rNeu = guild.roles.cache.find(r => r.name === 'Neu');
   const rMitglied = guild.roles.cache.find(r => r.name === 'Mitglied');
+  let verifyCh, supportTicketCh, bewCh;
 
-  // --- 1. DOPPELTE FIXEN ---
-  // ticket-erstellen -> löschen, wir behalten ticket-eröffnen
-  // logs -> löschen, wir behalten server-logs
-  // PRIVATE PROJEKTE + INFO + SUPPORT Kategorien löschen (leer/doppelt)
-  const zuLoeschenNamen = ['ticket-erstellen', 'logs'];
-  for (const ch of [...guild.channels.cache.values()]) {
-    if (zuLoeschenNamen.includes(ch.name.toLowerCase())) {
-      await ch.delete('Doppelt - Cleanup').catch(()=>{});
-      console.log(`Doppelt gelöscht: ${ch.name}`);
-    }
-    if (ch.type === 4 && ['PRIVATE PROJEKTE', 'INFO', 'SUPPORT'].includes(ch.name.toUpperCase())) {
-      // Nur löschen wenn leer oder nur doppelte Kanäle drin waren
-      const kinder = guild.channels.cache.filter(c => c.parentId === ch.id);
-      if (kinder.size === 0) await ch.delete('Leere Doppel-Kategorie').catch(()=>{});
-    }
-  }
-  // Gleiche Namen doppelt: 2x willkommen, 2x regeln, 2x ankündigungen, 2x aufträge -> ältesten behalten, Rest löschen
-  const gesehen = new Map();
-  for (const ch of [...guild.channels.cache.values()].sort((a,b) => a.createdTimestamp - b.createdTimestamp)) {
-    if (ch.type === 4) continue;
-    const key = ch.name.toLowerCase();
-    if (gesehen.has(key)) {
-      await ch.delete('Doppelter Kanal').catch(()=>{});
-      console.log(`Doppelter Kanal gelöscht: ${ch.name}`);
-    } else gesehen.set(key, ch.id);
-  }
-
-  // --- 2. KATEGORIEN + KANÄLE SORTIEREN ---
-  let verifyCh, supportTicketCh, bewCh, botStatusCh;
   for (const katDef of FINALE_STRUKTUR) {
     let kat = guild.channels.cache.find(c => c.name === katDef.kat && c.type === 4);
     if (!kat) kat = await guild.channels.create({ name: katDef.kat, type: 4 }).catch(()=>null);
     if (!kat) continue;
     await kat.setPosition(katDef.pos).catch(()=>{});
 
-    for (const chDef of katDef.channels) {
-      let ch = guild.channels.cache.find(c => c.name.toLowerCase() === chDef.name.toLowerCase() && c.type === chDef.type);
+    for (let i = 0; i < katDef.channels.length; i++) {
+      const chDef = katDef.channels[i];
+      const type = chDef.type || 0;
+      // Kanal-Name mit Emoji versuchen: z.B. 🎫-ticket-eröffnen
+      const nameMitEmoji = `${chDef.emoji}-${chDef.name.toLowerCase().replace(/ /g, '-')}`;
+      let ch = guild.channels.cache.find(c => c.name.toLowerCase().includes(chDef.name.toLowerCase()) && c.type === type);
       if (!ch) {
-        // Erstellen wenn fehlt
         let overwrites = [{ id: guild.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }];
         if (chDef.name === 'verify') overwrites = [{ id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: rNeu.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }];
         if (chDef.name === 'bewerbungen') overwrites = [{ id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: rMitglied.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }, { id: rNeu.id, deny: [PermissionFlagsBits.ViewChannel] }];
         if (chDef.name === 'server-logs') overwrites = [{ id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: guild.ownerId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }];
-        ch = await guild.channels.create({ name: chDef.name, type: chDef.type, parent: kat.id, permissionOverwrites: overwrites }).catch(()=>null);
+        ch = await guild.channels.create({ name: nameMitEmoji, type, parent: kat.id, topic: chDef.topic, permissionOverwrites: overwrites }).catch(async () => {
+          // Falls Discord Emoji nicht mag -> ohne Emoji erstellen
+          return await guild.channels.create({ name: chDef.name.toLowerCase().replace(/ /g, '-'), type, parent: kat.id, topic: chDef.topic, permissionOverwrites: overwrites }).catch(()=>null);
+        });
       } else {
         await ch.setParent(kat.id).catch(()=>{});
-        // server-logs IMMER nur Owner!
         if (chDef.name === 'server-logs') {
           await ch.permissionOverwrites.set([{ id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: guild.ownerId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }]).catch(()=>{});
         }
+        // Topic mit Emoji setzen, falls fehlt
+        if (type === 0 && chDef.topic) await ch.setTopic(chDef.topic).catch(()=>{});
       }
-      if (ch) await ch.setPosition(chDef.pos).catch(()=>{});
+      if (ch) await ch.setPosition(i).catch(()=>{});
       if (chDef.name === 'verify') verifyCh = ch;
       if (chDef.name === 'ticket-eröffnen') supportTicketCh = ch;
       if (chDef.name === 'bewerbungen') bewCh = ch;
-      if (chDef.name === 'support') botStatusCh = ch;
-    }
-  }
-  // Alte verwaiste Kategorien löschen, die nicht in der Struktur sind
-  for (const ch of [...guild.channels.cache.values()]) {
-    if (ch.type === 4 && !FINALE_STRUKTUR.some(k => k.kat === ch.name)) {
-      const kinder = guild.channels.cache.filter(c => c.parentId === ch.id);
-      if (kinder.size === 0) await ch.delete('Alte Kategorie').catch(()=>{});
     }
   }
   return { verifyCh, supportCh: supportTicketCh, bewCh };
@@ -180,7 +151,7 @@ client.once('ready', async () => {
     new SlashCommandBuilder().setName('verify-setup').setDescription('Verify-Nachricht mit Button posten').setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder().setName('ticket-setup').setDescription('Ticket-Nachricht mit Button posten').setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder().setName('bewerbung-setup').setDescription('Bewerbungs-Panel posten').setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-    new SlashCommandBuilder().setName('setup-all').setDescription('ALLES automatisch syncen: Rollen + Kanäle sortieren + Doppelte fixen').setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder().setName('setup-all').setDescription('ALLES neu erstellen: Rollen + Kanäle mit Emoji + Panels').setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder().setName('schlafen').setDescription('Bot geht schlafen').setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder().setName('giveaway').setDescription('Giveaway starten').setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages).addStringOption(o => o.setName('preis').setDescription('Was gibt es zu gewinnen?').setRequired(true)).addIntegerOption(o => o.setName('minuten').setDescription('Wie lange?').setRequired(true)),
     new SlashCommandBuilder().setName('warn').setDescription('User warnen').setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers).addUserOption(o => o.setName('user').setDescription('Wen?').setRequired(true)).addStringOption(o => o.setName('grund').setDescription('Grund').setRequired(true)),
@@ -200,7 +171,7 @@ client.once('ready', async () => {
 client.on('guildMemberAdd', async (member) => {
   const rolleNeu = getRole(member.guild, ROLE_NEU);
   if (rolleNeu) await member.roles.add(rolleNeu).catch(()=>{});
-  const ch = member.guild.channels.cache.find(c => c.name === 'willkommen');
+  const ch = member.guild.channels.cache.find(c => c.name.includes('willkommen'));
   if (ch) {
     const embed = new EmbedBuilder().setTitle(`Willkommen, ${member.user.username}! 🎉`).setDescription(`Schön dass du da bist! Geh zu #verify und verifiziere dich mit dem Button.`).setColor(0x57F287).setThumbnail(member.user.displayAvatarURL()).setTimestamp();
     ch.send({ content: `${member}`, embeds: [embed] }).catch(()=>{});
@@ -264,6 +235,25 @@ client.on('messageCreate', async (message) => {
 
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.guild) return;
+  // ===== TICKET MODAL ABSCHICKEN =====
+  if (interaction.isModalSubmit() && interaction.customId === 'ticket_modal') {
+    const was = interaction.fields.getTextInputValue('ticket_was');
+    const koennen = interaction.fields.getTextInputValue('ticket_koennen');
+    const bisWann = interaction.fields.getTextInputValue('ticket_biswann');
+    const budget = interaction.fields.getTextInputValue('ticket_budget');
+    const existing = interaction.guild.channels.cache.find(c => c.name.includes(`ticket-${interaction.user.username.toLowerCase()}`));
+    if (existing) return interaction.reply({ content: `Du hast schon ein Ticket: ${existing}`, ephemeral: true });
+    const staffRole = getRole(interaction.guild, TICKET_STAFF_ROLE);
+    const kundeRole = getRole(interaction.guild, ROLE_KUNDE);
+    if (kundeRole) await interaction.member.roles.add(kundeRole).catch(()=>{});
+    const ticketCat = interaction.guild.channels.cache.find(c => c.name.includes('ANFRAGEN') && c.type === 4);
+    const channel = await interaction.guild.channels.create({ name: `🎫-ticket-${interaction.user.username.toLowerCase()}`, type: ChannelType.GuildText, parent: ticketCat ? ticketCat.id : null, permissionOverwrites: [{ id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }, ...(staffRole ? [{ id: staffRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }] : [])] }).catch(async () => await interaction.guild.channels.create({ name: `ticket-${interaction.user.username.toLowerCase()}`, type: ChannelType.GuildText, parent: ticketCat ? ticketCat.id : null, permissionOverwrites: [{ id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }, ...(staffRole ? [{ id: staffRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }] : [])] }));
+    const closeRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_close').setLabel('Ticket schließen').setStyle(ButtonStyle.Danger).setEmoji('🔒'));
+    await channel.send({ content: `${interaction.user} ${staffRole ? staffRole : ''}`, embeds: [new EmbedBuilder().setTitle('🎫 Neues Ticket - Formular ausgefüllt').setDescription(`**Was brauchst du?**\n${was}\n\n**Was soll der Bot / Server können?**\n${koennen}\n\n**Bis wann brauchst du es?**\n${bisWann}\n\n**Budget:**\n${budget}`).setColor(0x5865F2)], components: [closeRow] });
+    await interaction.reply({ content: `✅ Ticket erstellt: ${channel} - Du hast jetzt die Rolle **${ROLE_KUNDE}**!`, ephemeral: true });
+    log(interaction.guild, '🎫 Ticket erstellt', `${interaction.user} hat ein Ticket erstellt: ${channel}`, 0x5865F2);
+    return;
+  }
   if (interaction.isButton()) {
     if (interaction.customId === 'verify_btn') {
       const role = getRole(interaction.guild, VERIFIED_ROLE);
@@ -276,17 +266,19 @@ client.on('interactionCreate', async (interaction) => {
       return;
     }
     if (interaction.customId === 'ticket_create') {
-      const existing = interaction.guild.channels.cache.find(c => c.name === `ticket-${interaction.user.username.toLowerCase()}`);
-      if (existing) return interaction.reply({ content: `Du hast schon ein Ticket: ${existing}`, ephemeral: true });
-      const staffRole = getRole(interaction.guild, TICKET_STAFF_ROLE);
-      const kundeRole = getRole(interaction.guild, ROLE_KUNDE);
-      if (kundeRole) await interaction.member.roles.add(kundeRole).catch(()=>{});
-      const ticketCat = interaction.guild.channels.cache.find(c => c.name.includes('ANFRAGEN') && c.type === 4);
-      const channel = await interaction.guild.channels.create({ name: `ticket-${interaction.user.username.toLowerCase()}`, type: ChannelType.GuildText, parent: ticketCat ? ticketCat.id : null, permissionOverwrites: [{ id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }, ...(staffRole ? [{ id: staffRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }] : [])] });
-      const closeRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_close').setLabel('Ticket schließen').setStyle(ButtonStyle.Danger).setEmoji('🔒'));
-      await channel.send({ content: `${interaction.user} ${staffRole ? staffRole : ''}`, embeds: [new EmbedBuilder().setTitle('🎫 Neues Ticket').setDescription('Beschreibe dein Problem, das Team meldet sich gleich.').setColor(0x5865F2)], components: [closeRow] });
-      await interaction.reply({ content: `Ticket erstellt: ${channel} - Du hast jetzt die Rolle **${ROLE_KUNDE}**!`, ephemeral: true });
-      log(interaction.guild, '🎫 Ticket erstellt', `${interaction.user} hat ein Ticket erstellt: ${channel}`, 0x5865F2);
+      // ===== FORMULAR ÖFFNEN =====
+      const modal = new ModalBuilder().setCustomId('ticket_modal').setTitle('🎫 Ticket erstellen');
+      const q1 = new TextInputBuilder().setCustomId('ticket_was').setLabel('Was brauchst du? Bot / Server / Beides?').setStyle(TextInputStyle.Short).setPlaceholder('z.B. Bot').setRequired(true);
+      const q2 = new TextInputBuilder().setCustomId('ticket_koennen').setLabel('Was soll der Bot / Server können?').setStyle(TextInputStyle.Paragraph).setPlaceholder('Beschreib mal genau, was er können soll...').setRequired(true);
+      const q3 = new TextInputBuilder().setCustomId('ticket_biswann').setLabel('Bis wann brauchst du es?').setStyle(TextInputStyle.Short).setPlaceholder('z.B. bis Freitag / so schnell wie möglich').setRequired(true);
+      const q4 = new TextInputBuilder().setCustomId('ticket_budget').setLabel('Budget?').setStyle(TextInputStyle.Short).setPlaceholder('z.B. 20€ / kein Budget / ...').setRequired(true);
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(q1),
+        new ActionRowBuilder().addComponents(q2),
+        new ActionRowBuilder().addComponents(q3),
+        new ActionRowBuilder().addComponents(q4)
+      );
+      await interaction.showModal(modal);
       return;
     }
     if (interaction.customId === 'ticket_close') {
@@ -339,15 +331,15 @@ client.on('interactionCreate', async (interaction) => {
       const verifyRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('verify_btn').setLabel('Verifizieren').setStyle(ButtonStyle.Success).setEmoji('✅'));
       if (synced.verifyCh) await synced.verifyCh.send({ embeds: [new EmbedBuilder().setTitle('🔒 Verifizierung').setDescription('Klicke auf den Button, um eine Mathe-Aufgabe zu bekommen. Wenn du sie richtig löst, wirst du verifiziert!').setColor(0x57F287)], components: [verifyRow] }).catch(()=>{});
       const ticketRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_create').setLabel('Ticket erstellen').setStyle(ButtonStyle.Primary).setEmoji('🎫'));
-      if (synced.supportCh) await synced.supportCh.send({ embeds: [new EmbedBuilder().setTitle('🎫 Support Ticket').setDescription('Brauchst du Hilfe? Klicke auf den Button, um ein Ticket zu erstellen.').setColor(0x5865F2)], components: [ticketRow] }).catch(()=>{});
+      if (synced.supportCh) await synced.supportCh.send({ embeds: [new EmbedBuilder().setTitle('🎫 Support Ticket').setDescription('Brauchst du Hilfe? Klicke auf den Button und fülle das Formular aus!\n\n**Formular:**\n1. Was brauchst du? Bot / Server / Beides?\n2. Was soll der Bot / Server können?\n3. Bis wann brauchst du es?\n4. Budget?').setColor(0x5865F2)], components: [ticketRow] }).catch(()=>{});
       const bewRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('bew_team').setLabel('Als Team bewerben').setStyle(ButtonStyle.Success).setEmoji('💼'), new ButtonBuilder().setCustomId('bew_creator').setLabel('Als Content Creator bewerben').setStyle(ButtonStyle.Primary).setEmoji('🎬'));
       if (synced.bewCh) await synced.bewCh.send({ embeds: [new EmbedBuilder().setTitle('📝 Bewerbungen').setDescription('Willst du ins Team oder Content Creator werden? Wähle unten aus!').setColor(0xFF9900)], components: [bewRow] }).catch(()=>{});
-      return interaction.editReply({ content: '✅ Fertig! Doppelte gelöscht, alle Kanäle sortiert, #server-logs ist jetzt NUR für dich sichtbar!' });
+      return interaction.editReply({ content: '✅ Fertig! Alles neu erstellt mit Emojis + Ticket-Formular ist drin!' });
     }
     if (commandName === 'verify-setup') { const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('verify_btn').setLabel('Verifizieren').setStyle(ButtonStyle.Success).setEmoji('✅')); await interaction.channel.send({ embeds: [new EmbedBuilder().setTitle('🔒 Verifizierung').setDescription('Klicke auf den Button, um eine Mathe-Aufgabe zu bekommen.').setColor(0x57F287)], components: [row] }); return interaction.reply({ content: 'Verify-Nachricht gepostet!', ephemeral: true }); }
-    if (commandName === 'ticket-setup') { const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_create').setLabel('Ticket erstellen').setStyle(ButtonStyle.Primary).setEmoji('🎫')); await interaction.channel.send({ embeds: [new EmbedBuilder().setTitle('🎫 Support Ticket').setDescription('Brauchst du Hilfe? Klicke auf den Button!').setColor(0x5865F2)], components: [row] }); return interaction.reply({ content: 'Ticket-Nachricht gepostet!', ephemeral: true }); }
+    if (commandName === 'ticket-setup') { const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_create').setLabel('Ticket erstellen').setStyle(ButtonStyle.Primary).setEmoji('🎫')); await interaction.channel.send({ embeds: [new EmbedBuilder().setTitle('🎫 Support Ticket').setDescription('Brauchst du Hilfe? Klicke auf den Button und fülle das Formular aus!').setColor(0x5865F2)], components: [row] }); return interaction.reply({ content: 'Ticket-Nachricht gepostet!', ephemeral: true }); }
     if (commandName === 'bewerbung-setup') { const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('bew_team').setLabel('Als Team bewerben').setStyle(ButtonStyle.Success).setEmoji('💼'), new ButtonBuilder().setCustomId('bew_creator').setLabel('Als Content Creator bewerben').setStyle(ButtonStyle.Primary).setEmoji('🎬')); await interaction.channel.send({ embeds: [new EmbedBuilder().setTitle('📝 Bewerbungen').setDescription('Willst du ins Team oder Content Creator werden?').setColor(0xFF9900)], components: [row] }); return interaction.reply({ content: 'Bewerbungs-Panel gepostet!', ephemeral: true }); }
-    if (commandName === 'schlafen') { const ch = interaction.guild.channels.cache.find(c => c.name === 'support'); const text = SLEEP_TEXTS[Math.floor(Math.random() * SLEEP_TEXTS.length)]; if (ch) await ch.send(`🔴 **Ich geh schlafen...**\n${text}`); return interaction.reply({ content: 'Gute Nacht! 😴', ephemeral: true }); }
+    if (commandName === 'schlafen') { const ch = interaction.guild.channels.cache.find(c => c.name.includes('support')); const text = SLEEP_TEXTS[Math.floor(Math.random() * SLEEP_TEXTS.length)]; if (ch) await ch.send(`🔴 **Ich geh schlafen...**\n${text}`); return interaction.reply({ content: 'Gute Nacht! 😴', ephemeral: true }); }
     if (commandName === 'giveaway') { const preis = interaction.options.getString('preis'); const minuten = interaction.options.getInteger('minuten'); const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`giveaway_join_temp`).setLabel('Teilnehmen').setStyle(ButtonStyle.Success).setEmoji('🎉')); const msg = await interaction.reply({ embeds: [new EmbedBuilder().setTitle('🎉 GIVEAWAY').setDescription(`**Preis:** ${preis}\n**Endet in:** ${minuten} Minuten`).setColor(0xFEE75C)], components: [row], fetchReply: true }); const msgId = msg.id; const row2 = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`giveaway_join_${msgId}`).setLabel('Teilnehmen').setStyle(ButtonStyle.Success).setEmoji('🎉')); await msg.edit({ components: [row2] }); setTimeout(async () => { const set = global.giveaways?.get(msgId) || new Set(); const arr = [...set]; if (arr.length === 0) return interaction.followUp({ content: `Giveaway vorbei - leider hat niemand teilgenommen. Preis war: ${preis}` }); const winner = arr[Math.floor(Math.random() * arr.length)]; await interaction.followUp({ content: `🎉 Gewinner für **${preis}** ist <@${winner}>!` }); log(interaction.guild, '🎉 Giveaway beendet', `Gewinner: <@${winner}> - Preis: ${preis}`, 0xFEE75C); }, minuten * 60 * 1000); return; }
     if (commandName === 'warn') { const user = interaction.options.getUser('user'); const grund = interaction.options.getString('grund'); await interaction.reply({ content: `⚠️ ${user} wurde verwarnt. Grund: ${grund}` }); try { await user.send(`Du wurdest auf **${interaction.guild.name}** verwarnt. Grund: ${grund}`); } catch {} log(interaction.guild, '⚠️ Warn', `${user} von ${interaction.user} verwarnt. Grund: ${grund}`, 0xFEE75C); return; }
     if (commandName === 'timeout') { const member = interaction.options.getMember('user'); const minuten = interaction.options.getInteger('minuten'); const grund = interaction.options.getString('grund') || 'Kein Grund'; await member.timeout(minuten * 60 * 1000, grund); await interaction.reply({ content: `🔇 ${member} für ${minuten} Min getimeoutet. Grund: ${grund}` }); log(interaction.guild, '🔇 Timeout', `${member} für ${minuten} Min. Grund: ${grund}`, 0xFEE75C); return; }
