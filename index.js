@@ -16,7 +16,6 @@ const ROLE_TEAM = 'Team';
 const ROLE_CREATOR = 'Content Creator';
 const TICKET_STAFF_ROLE = 'Team';
 
-const findChannel = (guild, name) => guild.channels.cache.find(c => c.name.toLowerCase().includes(name));
 async function log(guild, title, desc, color = 0x2b2d31) {
   const ch = guild.channels.cache.find(c => c.name.includes('server-logs'));
   if (!ch) return;
@@ -35,7 +34,7 @@ const CREATOR_FRAGEN = ["Wie alt bist du?","Auf welcher Plattform machst du Cont
 const getRole = (guild, name) => guild.roles.cache.find(r => r.name === name);
 const SYNC_ROLLEN = ['Neu', 'Mitglied', 'Kunde', 'Bewerber', 'Team', 'VIP', 'Partner', 'Stammkunde', 'Content Creator', 'Tester', 'Booster', 'Ehrenmitglied'];
 
-// ================= NEUER SERVER - ALLES NEU MIT EMOJI =================
+// ================= FINALE STRUKTUR - ALLES RICHTIG =================
 const FINALE_STRUKTUR = [
   { kat: '🚀 START', pos: 0, channels: [
     { emoji: '👋', name: 'willkommen', topic: '👋 Willkommen bei BotBastler!' },
@@ -43,6 +42,7 @@ const FINALE_STRUKTUR = [
     { emoji: '📜', name: 'regeln', topic: '📜 Regeln lesen!' },
     { emoji: '📢', name: 'ankündigungen', topic: '📢 Neuigkeiten!' },
     { emoji: '🤖', name: 'über-botbastler', topic: '🤖 Wer sind wir?' },
+    { emoji: '🤖', name: 'bot-status', topic: '🤖 Bot schläft / ist wach - hier wecken!' },
   ]},
   { kat: '💰 LEISTUNGEN', pos: 1, channels: [
     { emoji: '💸', name: 'preise', topic: '💸 Unsere Preise' },
@@ -54,10 +54,10 @@ const FINALE_STRUKTUR = [
   ]},
   { kat: '💬 ANFRAGEN & COMMUNITY', pos: 2, channels: [
     { emoji: '🆘', name: 'support', topic: '🆘 Hilfe hier!' },
-    { emoji: '💬', name: 'community-chat', topic: '💬 Quatschen' },
+    { emoji: '💬', name: 'community-chat', topic: '💬 Quatschen - Deutsch' },
+    { emoji: '🇬🇧', name: 'english-chat', topic: '🇬🇧 English Only!' },
     { emoji: '💡', name: 'feedback', topic: '💡 Feedback' },
     { emoji: '🎫', name: 'ticket-eröffnen', topic: '🎫 Ticket mit Formular erstellen!' },
-    { emoji: '❓', name: 'faq', topic: '❓ Fragen & Antworten' },
     { emoji: '💡', name: 'ideen', topic: '💡 Deine Ideen' },
     { emoji: '📊', name: 'umfragen', topic: '📊 Umfragen' },
     { emoji: '😂', name: 'memes', topic: '😂 Memes' },
@@ -68,19 +68,13 @@ const FINALE_STRUKTUR = [
     { emoji: '🎮', name: 'Gaming Talk', type: 2, topic: '🎮 Voice - Zocken' },
     { emoji: '🎵', name: 'Musik & Chill', type: 2, topic: '🎵 Voice - Musik' },
   ]},
-  { kat: '💬 CHAT', pos: 3, channels: [
-    { emoji: '💬', name: 'allgemein', topic: '💬 Allgemein' },
-    { emoji: '🎮', name: 'gaming', topic: '🎮 Gaming' },
-    { emoji: '🎵', name: 'musik', topic: '🎵 Musik' },
-    { emoji: '🖼️', name: 'bilder', topic: '🖼️ Bilder' },
-  ]},
-  { kat: '🔑 KUNDENBEREICH', pos: 4, channels: [
+  { kat: '🔑 KUNDENBEREICH', pos: 3, channels: [
     { emoji: 'ℹ️', name: 'kunden-info', topic: 'ℹ️ Infos für Kunden' },
     { emoji: '📢', name: 'kunden-updates', topic: '📢 Updates für Kunden' },
     { emoji: '💬', name: 'kunden-chat', topic: '💬 Kunden Chat' },
     { emoji: '📞', name: 'Kundengespräch', type: 2, topic: '📞 Voice - Kundengespräch' },
   ]},
-  { kat: '🛠️ INTERN · TEAM', pos: 5, channels: [
+  { kat: '🛠️ INTERN · TEAM', pos: 4, channels: [
     { emoji: '📦', name: 'aufträge', topic: '📦 Aufträge' },
     { emoji: '📅', name: 'planung', topic: '📅 Planung' },
     { emoji: '💬', name: 'team-chat', topic: '💬 Team Chat' },
@@ -94,10 +88,41 @@ const FINALE_STRUKTUR = [
     { emoji: '🎙️', name: 'Team Talk', type: 2, topic: '🎙️ Voice - Team' },
     { emoji: '📞', name: 'Team Meeting', type: 2, topic: '📞 Voice - Meeting' },
   ]},
-  { kat: '👑 NUR OWNER', pos: 6, channels: [
+  { kat: '👑 NUR OWNER', pos: 5, channels: [
     { emoji: '📜', name: 'server-logs', topic: '📜 Nur Owner!' },
   ]},
 ];
+
+// ================= INFO-TEXTE DEUTSCH + ENGLISCH =================
+const INFO_TEXTE = {
+  'regeln': `**📜 Regeln - Bitte genau lesen! / Rules - Please read carefully!**\n\n**Wer diesem Server beitritt, akzeptiert automatisch alle Regeln!**\n**Anyone who joins this server automatically accepts all rules!**\n\n**DEUTSCH:**\n1. **Sei respektvoll!** Kein Beleidigen, kein Mobbing, kein Rassismus, kein Sexismus, keine Hassrede.\n2. **Kein Spam!** Nicht 10x die gleiche Nachricht, keine unnötigen Pings, keine Kettenbriefe.\n3. **Keine Werbung!** Keine Werbung für andere Server, Bots oder Produkte - außer in #partner-werbung und nur mit Erlaubnis vom Team.\n4. **Kein NSFW / 18+ Inhalt!** Keine pornografischen, gewalttätigen oder ekelhaften Inhalte.\n5. **Keine privaten Daten!** Teil keine Adressen, Telefonnummern, Passwörter oder sonstige private Sachen - weder von dir noch von anderen.\n6. **Kein Cheaten / Hacken!** Keine Hacks, keine Cheats, keine Scam-Links, keine Phishing-Links.\n7. **Support nur über Tickets!** Schreib Team-Mitglieder bitte nicht privat an. Mach ein Ticket in #ticket-eröffnen auf.\n8. **Hör auf das Team!** Wenn Team oder Owner was sagen, dann gilt das.\n9. **Kein Leaken!** Was im Kundenbereich oder in Tickets steht, bleibt da!\n10. **Kein Alt-Account / Ban-Umgehung!** Wer gebannt ist, bleibt gebannt.\n11. **Discord TOS gelten!** Die Discord Regeln gelten hier natürlich auch.\n12. **Eigener Content!** Keine geklauten Sachen als deine eigenen ausgeben.\n\n**Bei Verstoß: Warn / Timeout / Kick / Ban**\n\n**ENGLISH:**\n1. **Be respectful!** No insults, no bullying, no racism, no sexism, no hate speech.\n2. **No spam!** Don't send the same message 10x, no unnecessary pings, no chain messages.\n3. **No advertising!** No ads for other servers, bots or products - except in #partner-werbung and only with team permission.\n4. **No NSFW / 18+ content!** No pornographic, violent or disgusting content.\n5. **No private data!** Don't share addresses, phone numbers, passwords or other private stuff.\n6. **No cheating / hacking!** No hacks, cheats, scam links or phishing links.\n7. **Support only via tickets!** Don't DM team members. Open a ticket in #ticket-eröffnen.\n8. **Listen to the team!** When team or owner says something, it counts.\n9. **No leaking!** What is in the customer area or tickets, stays there!\n10. **No alt accounts / ban evasion!** If you are banned, you stay banned.\n11. **Discord TOS apply!** Discord's rules apply here too.\n12. **Own content only!** Don't claim stolen stuff as your own.\n\n**If you break the rules: Warn / Timeout / Kick / Ban**`,
+  'über-botbastler': `**🤖 Wer sind wir? / Who are we?**\n\n**DEUTSCH:** Wir sind **BotBastler Studio** - wir bauen dir deinen eigenen Discord-Bot und deinen eigenen Discord-Server - genau so, wie du ihn dir vorstellst!\n**ENGLISH:** We are **BotBastler Studio** - we build your own Discord Bot and your own Discord Server - exactly how you imagine it!\n\nEgal ob klein oder groß - wir machen das! / No matter small or big - we do it!`,
+  'preise': `**💸 Preise / Prices**\n\n**🤖 DISCORD BOT:**\n- Kleiner Bot (z.B. Verify, Tickets, Warn-System): **ab 5€ / from 5€**\n- Mittlerer Bot (mit Bewerbung, Giveaway, Logs & mehr): **ab 10€ / from 10€**\n- Großer Custom Bot (alles was du willst): **ab 15-20€ / from 15-20€ - Preis nach Absprache / price on request**\n\n**🛠️ DISCORD SERVER:**\n- Kleiner Server (Kanäle + Rollen + Regeln): **ab 5€ / from 5€**\n- Kompletter Server (mit allem: Tickets, Bewerbung, Kundenbereich...): **ab 15-20€ / from 15-20€**\n\n**🔥 BOT + SERVER ZUSAMMEN / TOGETHER: 25€ - du sparst! / you save!**\n\n**Bezahlung / Payment: NUR Paysafecard & Überweisung / ONLY Paysafecard & Bank Transfer**\n\nMach einfach ein Ticket auf und sag uns, was du brauchst - dann sagen wir dir den genauen Preis!\nJust open a ticket and tell us what you need - then we tell you the exact price!`,
+  'portfolio': `**🖼️ Portfolio / Our Work**\n\n**DEUTSCH:** Hier siehst du, was wir schon gebaut haben! Bots, Server, alles was wir gemacht haben - hier als Bilder / Videos!\n**ENGLISH:** Here you can see what we have already built! Bots, servers, everything we made - here as pictures / videos!\n\nBald kommen hier die ersten Projekte! / First projects coming soon!`,
+  'unsere-leistungen': `**🛠️ Was wir machen / What we do:**\n\n**DEUTSCH:**\n**1. Discord Bots 🤖** Verify-System, Ticket-System mit Formular, Bewerbungs-System, Giveaways, Warn / Timeout / Kick / Ban, Logs, Schlafen / Wach-System und viel mehr!\n**2. Discord Server 🛠️** Komplett eingerichtet: Kategorien, Kanäle mit Emojis, Rollen, Berechtigungen, Kundenbereich, Team-Bereich - alles fertig!\n**3. Bot + Server Kombi 🔥** Das Beste aus beidem - Server + Bot, die perfekt zusammenpassen!\n**4. Support & Hilfe 🆘** Auch nach dem Kauf helfen wir dir weiter!\n\n**ENGLISH:**\n**1. Discord Bots 🤖** Verify system, ticket system with form, application system, giveaways, warn / timeout / kick / ban, logs and much more!\n**2. Discord Servers 🛠️** Fully set up: categories, channels with emojis, roles, permissions, customer area, team area - all done!\n**3. Bot + Server Combo 🔥** The best of both - server + bot that fit perfectly!\n**4. Support & Help 🆘** Even after purchase we help you!\n\nInteresse? Ticket in #ticket-eröffnen aufmachen! / Interested? Open a ticket in #ticket-eröffnen!`,
+  'so-läuft-es-ab': `**📋 So läuft es ab / How it works:**\n\n**DEUTSCH:**\n**1. Ticket aufmachen 🎫** Geh zu #ticket-eröffnen und füll das Formular aus: Was brauchst du? Was soll es können? Bis wann? Budget?\n**2. Wir quatschen 💬** Wir reden mit dir im Ticket und klären alles: Preis, was genau gebaut wird, bis wann fertig.\n**3. Wir bauen 🛠️** Wir bauen deinen Bot / Server. Du bekommst Updates in deinem Ticket!\n**4. Du testest ✅** Du guckst dir alles an und sagst, ob noch was geändert werden soll.\n**5. Fertig & Bezahlen 💸** Wenn alles passt, bezahlst du und bekommst deinen Bot / Server!\n\n**ENGLISH:**\n**1. Open a ticket 🎫** Go to #ticket-eröffnen and fill the form: What do you need? What should it do? Until when? Budget?\n**2. We talk 💬** We talk with you in the ticket and clarify everything: price, what will be built, until when.\n**3. We build 🛠️** We build your bot / server. You get updates in your ticket!\n**4. You test ✅** You check everything and say if something should be changed.\n**5. Done & Pay 💸** If everything fits, you pay and get your bot / server!\n\nEasy, oder? / Easy, right? 😎`,
+  'bewertungen': `**⭐ Bewertungen / Reviews**\n\n**DEUTSCH:** Warst du schon Kunde bei uns? Dann bewerte uns hier!\n**So geht's:** Schreib in #feedback oder in deinem Ticket:\n1. Was hast du bestellt? Bot / Server / Beides?\n2. Wie viele Sterne? ⭐⭐⭐⭐⭐ (1-5)\n3. Wie war es? Warst du zufrieden? Was war gut? Was können wir besser machen?\nWir posten deine Bewertung dann hier!\n\n**ENGLISH:** Have you been a customer? Then rate us here!\n**How it works:** Write in #feedback or in your ticket:\n1. What did you order? Bot / Server / Both?\n2. How many stars? ⭐⭐⭐⭐⭐ (1-5)\n3. How was it? Were you happy? What was good? What can we do better?\nWe will post your review here!\n\nDanke für euer Vertrauen! / Thanks for your trust! ❤️`,
+  'partner-werbung': `**🤝 Partner-Werbung / Partner Advertising**\n\n**DEUTSCH:** Hier dürfen unsere Partner Werbung machen! Nur mit Erlaubnis vom Team! Schreib uns ein Ticket, wenn du Partner werden willst. 1x Werbung pro Tag, kein Spam!\n**ENGLISH:** Here our partners can advertise! Only with team permission! Open a ticket if you want to become a partner. 1 ad per day, no spam!`,
+  'ideen': `**💡 Ideen / Ideas**\n\n**DEUTSCH:** Hast du eine Idee für uns? Für einen Bot? Für den Server? Für ein neues Feature? Schreib sie hier rein! Die besten Ideen bauen wir vielleicht sogar!\n**ENGLISH:** Do you have an idea for us? For a bot? For the server? For a new feature? Write it here! Maybe we will build the best ideas!`,
+  'english-chat': `**💬 English Chat / Englischer Chat**\n\n**ENGLISH ONLY HERE!** This channel is only for English! Please speak English here!\n**DEUTSCH:** Hier wird NUR Englisch gesprochen! Für Deutsch geh zu #community-chat!`,
+  'community-chat': `**💬 Community Chat**\n\n**DEUTSCH:** Hier wird Deutsch gequatscht! Für Englisch geh zu #english-chat!\n**ENGLISH:** German chat here! For English go to #english-chat!`,
+  'kunden-info': `**ℹ️ Infos für Kunden / Info for Customers**\n\n**DEUTSCH:** Hey Kunde! Schön, dass du bei uns bestellt hast! Hier findest du alle Infos zu deinem Auftrag. Dein Ticket ist dein Haupt-Ort - da quatschen wir alles ab! Bei Fragen: Einfach im Ticket schreiben!\n**ENGLISH:** Hey customer! Nice that you ordered from us! Here you find all info about your order. Your ticket is your main place - we talk everything there! If you have questions: Just write in the ticket!`,
+  'bot-status': `**🤖 Bot-Status / Bot Status**\n\n**DEUTSCH:** Hier siehst du, ob ich schlafe oder wach bin! 😴 / 👀\nWenn ich schlafe, schreib einfach hier was rein und ich wache nach 60 Sekunden wieder auf!\nMit **/schlafen** schickt mich das Team schlafen!\n\n**ENGLISH:** Here you can see if I am sleeping or awake! 😴 / 👀\nIf I am sleeping, just write something here and I will wake up after 60 seconds!\nWith **/schlafen** the team sends me to sleep!`,
+};
+
+async function postIfNotExists(channel, checkText, content) {
+  if (!channel) return;
+  try {
+    const msgs = await channel.messages.fetch({ limit: 20 }).catch(()=>null);
+    if (msgs) {
+      for (const m of msgs.values()) {
+        const text = (m.content || '') + ' ' + (m.embeds.map(e => (e.title||'') + ' ' + (e.description||'')).join(' '));
+        if (text.includes(checkText)) return;
+      }
+    }
+    await channel.send({ embeds: [new EmbedBuilder().setDescription(content).setColor(0x5865F2)] }).catch(()=>{});
+  } catch {}
+}
 
 async function syncAlles(guild) {
   for (const name of SYNC_ROLLEN) {
@@ -116,16 +141,17 @@ async function syncAlles(guild) {
     for (let i = 0; i < katDef.channels.length; i++) {
       const chDef = katDef.channels[i];
       const type = chDef.type || 0;
-      // Kanal-Name mit Emoji versuchen: z.B. 🎫-ticket-eröffnen
       const nameMitEmoji = `${chDef.emoji}-${chDef.name.toLowerCase().replace(/ /g, '-')}`;
-      let ch = guild.channels.cache.find(c => c.name.toLowerCase().includes(chDef.name.toLowerCase()) && c.type === type);
+      let ch = guild.channels.cache.find(c => {
+        const n = c.name.toLowerCase();
+        return c.type === type && (n === nameMitEmoji.toLowerCase() || n === chDef.name.toLowerCase().replace(/ /g, '-') || n.includes(chDef.name.toLowerCase()));
+      });
       if (!ch) {
         let overwrites = [{ id: guild.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }];
         if (chDef.name === 'verify') overwrites = [{ id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: rNeu.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }];
         if (chDef.name === 'bewerbungen') overwrites = [{ id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: rMitglied.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }, { id: rNeu.id, deny: [PermissionFlagsBits.ViewChannel] }];
         if (chDef.name === 'server-logs') overwrites = [{ id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: guild.ownerId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }];
         ch = await guild.channels.create({ name: nameMitEmoji, type, parent: kat.id, topic: chDef.topic, permissionOverwrites: overwrites }).catch(async () => {
-          // Falls Discord Emoji nicht mag -> ohne Emoji erstellen
           return await guild.channels.create({ name: chDef.name.toLowerCase().replace(/ /g, '-'), type, parent: kat.id, topic: chDef.topic, permissionOverwrites: overwrites }).catch(()=>null);
         });
       } else {
@@ -133,7 +159,6 @@ async function syncAlles(guild) {
         if (chDef.name === 'server-logs') {
           await ch.permissionOverwrites.set([{ id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }, { id: guild.ownerId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }]).catch(()=>{});
         }
-        // Topic mit Emoji setzen, falls fehlt
         if (type === 0 && chDef.topic) await ch.setTopic(chDef.topic).catch(()=>{});
       }
       if (ch) await ch.setPosition(i).catch(()=>{});
@@ -173,7 +198,7 @@ client.on('guildMemberAdd', async (member) => {
   if (rolleNeu) await member.roles.add(rolleNeu).catch(()=>{});
   const ch = member.guild.channels.cache.find(c => c.name.includes('willkommen'));
   if (ch) {
-    const embed = new EmbedBuilder().setTitle(`Willkommen, ${member.user.username}! 🎉`).setDescription(`Schön dass du da bist! Geh zu #verify und verifiziere dich mit dem Button.`).setColor(0x57F287).setThumbnail(member.user.displayAvatarURL()).setTimestamp();
+    const embed = new EmbedBuilder().setTitle(`Willkommen, ${member.user.username}! 🎉`).setDescription(`Schön dass du da bist! Geh zu #verify und verifiziere dich mit dem Button.\n\nWelcome! Go to #verify and verify yourself with the button.\n\n**Mit deinem Beitritt akzeptierst du automatisch unsere Regeln in #regeln!**\n**By joining you automatically accept our rules in #regeln!**`).setColor(0x57F287).setThumbnail(member.user.displayAvatarURL()).setTimestamp();
     ch.send({ content: `${member}`, embeds: [embed] }).catch(()=>{});
   }
   log(member.guild, '👋 Mitglied beigetreten', `${member} (${member.id}) ist beigetreten - Rolle Neu gegeben`, 0x57F287);
@@ -181,6 +206,7 @@ client.on('guildMemberAdd', async (member) => {
 
 client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
+  // ===== BOT-STATUS - AUFWECKEN =====
   if (message.channel.name && message.channel.name.toLowerCase().includes('bot-status')) {
     if (!wakeCooldown.has(message.author.id)) {
       wakeCooldown.add(message.author.id);
@@ -235,7 +261,6 @@ client.on('messageCreate', async (message) => {
 
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.guild) return;
-  // ===== TICKET MODAL ABSCHICKEN =====
   if (interaction.isModalSubmit() && interaction.customId === 'ticket_modal') {
     const was = interaction.fields.getTextInputValue('ticket_was');
     const koennen = interaction.fields.getTextInputValue('ticket_koennen');
@@ -266,18 +291,12 @@ client.on('interactionCreate', async (interaction) => {
       return;
     }
     if (interaction.customId === 'ticket_create') {
-      // ===== FORMULAR ÖFFNEN =====
       const modal = new ModalBuilder().setCustomId('ticket_modal').setTitle('🎫 Ticket erstellen');
       const q1 = new TextInputBuilder().setCustomId('ticket_was').setLabel('Was brauchst du? Bot / Server / Beides?').setStyle(TextInputStyle.Short).setPlaceholder('z.B. Bot').setRequired(true);
       const q2 = new TextInputBuilder().setCustomId('ticket_koennen').setLabel('Was soll der Bot / Server können?').setStyle(TextInputStyle.Paragraph).setPlaceholder('Beschreib mal genau, was er können soll...').setRequired(true);
       const q3 = new TextInputBuilder().setCustomId('ticket_biswann').setLabel('Bis wann brauchst du es?').setStyle(TextInputStyle.Short).setPlaceholder('z.B. bis Freitag / so schnell wie möglich').setRequired(true);
-      const q4 = new TextInputBuilder().setCustomId('ticket_budget').setLabel('Budget?').setStyle(TextInputStyle.Short).setPlaceholder('z.B. 20€ / kein Budget / ...').setRequired(true);
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(q1),
-        new ActionRowBuilder().addComponents(q2),
-        new ActionRowBuilder().addComponents(q3),
-        new ActionRowBuilder().addComponents(q4)
-      );
+      const q4 = new TextInputBuilder().setCustomId('ticket_budget').setLabel('Budget?').setStyle(TextInputStyle.Short).setPlaceholder('z.B. 5€ / 10€ / 25€').setRequired(true);
+      modal.addComponents(new ActionRowBuilder().addComponents(q1), new ActionRowBuilder().addComponents(q2), new ActionRowBuilder().addComponents(q3), new ActionRowBuilder().addComponents(q4));
       await interaction.showModal(modal);
       return;
     }
@@ -329,17 +348,36 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.deferReply({ ephemeral: true });
       const synced = await syncAlles(interaction.guild);
       const verifyRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('verify_btn').setLabel('Verifizieren').setStyle(ButtonStyle.Success).setEmoji('✅'));
-      if (synced.verifyCh) await synced.verifyCh.send({ embeds: [new EmbedBuilder().setTitle('🔒 Verifizierung').setDescription('Klicke auf den Button, um eine Mathe-Aufgabe zu bekommen. Wenn du sie richtig löst, wirst du verifiziert!').setColor(0x57F287)], components: [verifyRow] }).catch(()=>{});
+      if (synced.verifyCh) {
+        const msgs = await synced.verifyCh.messages.fetch({ limit: 10 }).catch(()=>null);
+        let hasBtn = false; if (msgs) for (const m of msgs.values()) if (m.components.length > 0) hasBtn = true;
+        if (!hasBtn) await synced.verifyCh.send({ embeds: [new EmbedBuilder().setTitle('🔒 Verifizierung').setDescription('Klicke auf den Button, um eine Mathe-Aufgabe zu bekommen. Wenn du sie richtig löst, wirst du verifiziert!').setColor(0x57F287)], components: [verifyRow] }).catch(()=>{});
+      }
       const ticketRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_create').setLabel('Ticket erstellen').setStyle(ButtonStyle.Primary).setEmoji('🎫'));
-      if (synced.supportCh) await synced.supportCh.send({ embeds: [new EmbedBuilder().setTitle('🎫 Support Ticket').setDescription('Brauchst du Hilfe? Klicke auf den Button und fülle das Formular aus!\n\n**Formular:**\n1. Was brauchst du? Bot / Server / Beides?\n2. Was soll der Bot / Server können?\n3. Bis wann brauchst du es?\n4. Budget?').setColor(0x5865F2)], components: [ticketRow] }).catch(()=>{});
+      if (synced.supportCh) {
+        const msgs = await synced.supportCh.messages.fetch({ limit: 10 }).catch(()=>null);
+        let hasBtn = false; if (msgs) for (const m of msgs.values()) if (m.components.length > 0) hasBtn = true;
+        if (!hasBtn) await synced.supportCh.send({ embeds: [new EmbedBuilder().setTitle('🎫 Support Ticket').setDescription('Brauchst du Hilfe? Klicke auf den Button und fülle das Formular aus!\n\n**Formular:**\n1. Was brauchst du? Bot / Server / Beides?\n2. Was soll der Bot / Server können?\n3. Bis wann brauchst du es?\n4. Budget?').setColor(0x5865F2)], components: [ticketRow] }).catch(()=>{});
+      }
       const bewRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('bew_team').setLabel('Als Team bewerben').setStyle(ButtonStyle.Success).setEmoji('💼'), new ButtonBuilder().setCustomId('bew_creator').setLabel('Als Content Creator bewerben').setStyle(ButtonStyle.Primary).setEmoji('🎬'));
-      if (synced.bewCh) await synced.bewCh.send({ embeds: [new EmbedBuilder().setTitle('📝 Bewerbungen').setDescription('Willst du ins Team oder Content Creator werden? Wähle unten aus!').setColor(0xFF9900)], components: [bewRow] }).catch(()=>{});
-      return interaction.editReply({ content: '✅ Fertig! Alles neu erstellt mit Emojis + Ticket-Formular ist drin!' });
+      if (synced.bewCh) {
+        const msgs = await synced.bewCh.messages.fetch({ limit: 10 }).catch(()=>null);
+        let hasBtn = false; if (msgs) for (const m of msgs.values()) if (m.components.length > 0) hasBtn = true;
+        if (!hasBtn) await synced.bewCh.send({ embeds: [new EmbedBuilder().setTitle('📝 Bewerbungen').setDescription('Willst du ins Team oder Content Creator werden? Wähle unten aus!').setColor(0xFF9900)], components: [bewRow] }).catch(()=>{});
+      }
+      for (const [key, text] of Object.entries(INFO_TEXTE)) {
+        const ch = interaction.guild.channels.cache.find(c => c.name.toLowerCase().includes(key));
+        if (ch) {
+          let check = 'Regeln'; if (key === 'preise') check = 'Preise'; if (key === 'über-botbastler') check = 'Wer sind wir'; if (key === 'portfolio') check = 'Portfolio'; if (key === 'unsere-leistungen') check = 'Was wir machen'; if (key === 'so-läuft-es-ab') check = 'So läuft es ab'; if (key === 'bewertungen') check = 'Bewertungen'; if (key === 'partner-werbung') check = 'Partner-Werbung'; if (key === 'ideen') check = 'Ideen'; if (key === 'english-chat') check = 'English Chat'; if (key === 'community-chat') check = 'Community Chat'; if (key === 'kunden-info') check = 'Infos für Kunden'; if (key === 'bot-status') check = 'Bot-Status';
+          await postIfNotExists(ch, check, text);
+        }
+      }
+      return interaction.editReply({ content: '✅ Fertig! Alles erstellt - NICHTS doppelt! Kanäle, Rollen, Panels & Info-Texte alle da!' });
     }
     if (commandName === 'verify-setup') { const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('verify_btn').setLabel('Verifizieren').setStyle(ButtonStyle.Success).setEmoji('✅')); await interaction.channel.send({ embeds: [new EmbedBuilder().setTitle('🔒 Verifizierung').setDescription('Klicke auf den Button, um eine Mathe-Aufgabe zu bekommen.').setColor(0x57F287)], components: [row] }); return interaction.reply({ content: 'Verify-Nachricht gepostet!', ephemeral: true }); }
     if (commandName === 'ticket-setup') { const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_create').setLabel('Ticket erstellen').setStyle(ButtonStyle.Primary).setEmoji('🎫')); await interaction.channel.send({ embeds: [new EmbedBuilder().setTitle('🎫 Support Ticket').setDescription('Brauchst du Hilfe? Klicke auf den Button und fülle das Formular aus!').setColor(0x5865F2)], components: [row] }); return interaction.reply({ content: 'Ticket-Nachricht gepostet!', ephemeral: true }); }
     if (commandName === 'bewerbung-setup') { const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('bew_team').setLabel('Als Team bewerben').setStyle(ButtonStyle.Success).setEmoji('💼'), new ButtonBuilder().setCustomId('bew_creator').setLabel('Als Content Creator bewerben').setStyle(ButtonStyle.Primary).setEmoji('🎬')); await interaction.channel.send({ embeds: [new EmbedBuilder().setTitle('📝 Bewerbungen').setDescription('Willst du ins Team oder Content Creator werden?').setColor(0xFF9900)], components: [row] }); return interaction.reply({ content: 'Bewerbungs-Panel gepostet!', ephemeral: true }); }
-    if (commandName === 'schlafen') { const ch = interaction.guild.channels.cache.find(c => c.name.includes('support')); const text = SLEEP_TEXTS[Math.floor(Math.random() * SLEEP_TEXTS.length)]; if (ch) await ch.send(`🔴 **Ich geh schlafen...**\n${text}`); return interaction.reply({ content: 'Gute Nacht! 😴', ephemeral: true }); }
+    if (commandName === 'schlafen') { const ch = interaction.guild.channels.cache.find(c => c.name.includes('bot-status')); const text = SLEEP_TEXTS[Math.floor(Math.random() * SLEEP_TEXTS.length)]; if (ch) await ch.send(`🔴 **Ich geh schlafen...**\n${text}`); return interaction.reply({ content: 'Gute Nacht! 😴 - Nachricht in #bot-status gepostet!', ephemeral: true }); }
     if (commandName === 'giveaway') { const preis = interaction.options.getString('preis'); const minuten = interaction.options.getInteger('minuten'); const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`giveaway_join_temp`).setLabel('Teilnehmen').setStyle(ButtonStyle.Success).setEmoji('🎉')); const msg = await interaction.reply({ embeds: [new EmbedBuilder().setTitle('🎉 GIVEAWAY').setDescription(`**Preis:** ${preis}\n**Endet in:** ${minuten} Minuten`).setColor(0xFEE75C)], components: [row], fetchReply: true }); const msgId = msg.id; const row2 = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`giveaway_join_${msgId}`).setLabel('Teilnehmen').setStyle(ButtonStyle.Success).setEmoji('🎉')); await msg.edit({ components: [row2] }); setTimeout(async () => { const set = global.giveaways?.get(msgId) || new Set(); const arr = [...set]; if (arr.length === 0) return interaction.followUp({ content: `Giveaway vorbei - leider hat niemand teilgenommen. Preis war: ${preis}` }); const winner = arr[Math.floor(Math.random() * arr.length)]; await interaction.followUp({ content: `🎉 Gewinner für **${preis}** ist <@${winner}>!` }); log(interaction.guild, '🎉 Giveaway beendet', `Gewinner: <@${winner}> - Preis: ${preis}`, 0xFEE75C); }, minuten * 60 * 1000); return; }
     if (commandName === 'warn') { const user = interaction.options.getUser('user'); const grund = interaction.options.getString('grund'); await interaction.reply({ content: `⚠️ ${user} wurde verwarnt. Grund: ${grund}` }); try { await user.send(`Du wurdest auf **${interaction.guild.name}** verwarnt. Grund: ${grund}`); } catch {} log(interaction.guild, '⚠️ Warn', `${user} von ${interaction.user} verwarnt. Grund: ${grund}`, 0xFEE75C); return; }
     if (commandName === 'timeout') { const member = interaction.options.getMember('user'); const minuten = interaction.options.getInteger('minuten'); const grund = interaction.options.getString('grund') || 'Kein Grund'; await member.timeout(minuten * 60 * 1000, grund); await interaction.reply({ content: `🔇 ${member} für ${minuten} Min getimeoutet. Grund: ${grund}` }); log(interaction.guild, '🔇 Timeout', `${member} für ${minuten} Min. Grund: ${grund}`, 0xFEE75C); return; }
